@@ -62,11 +62,11 @@ def convert(df, columns):
             
     return df
 
-path1 = "D:\Computing\Computer Science Year 3\IN3062 Introduction to Artificial Intelligence\TMDB-home"
+path1 = "."
 filename_read = os.path.join(path1,"tmdb_5000_movies.csv")
 movie = pd.read_csv(filename_read,na_values=['NA','?'])
 
-path2 = "D:\Computing\Computer Science Year 3\IN3062 Introduction to Artificial Intelligence\TMDB-home"
+path2 = "."
 filename_read = os.path.join(path2,"tmdb_5000_credits.csv")
 credit = pd.read_csv(filename_read,na_values=['NA','?'])
 
@@ -115,11 +115,10 @@ test = test[~test.crew.str.len().eq(0)]
 test = test[~test.cast.str.len().eq(0)]
 """
 
-test.to_csv(r'D:\Computing\Computer Science Year 3\IN3062 Introduction to Artificial Intelligence\TMDB-home\test.csv',
+test.to_csv(r'.test.csv',
             index = False)
 
 print(test['genres'])
-
 
 
 

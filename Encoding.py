@@ -18,7 +18,7 @@ def print_full(x):
 
                         # Read Data    
 
-path = "D:\Computing\Computer Science Year 3\IN3062 Introduction to Artificial Intelligence\TMDB-home"
+path = "."
 
 filename_read = os.path.join(path,"tmdb_5000_movies.csv")
 df = pd.read_csv(filename_read,na_values=['NA','?'])
