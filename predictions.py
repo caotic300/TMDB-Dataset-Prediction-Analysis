@@ -128,24 +128,27 @@ def plot_graph(X_train, X_test, y_train, y_test):
 
 #print(X.columns)
 
+#Custom Crossval creates a custom crossvalidation by sending the data
+#The data must use a label_col to label the cross validation.
+def make_custom_cross_val(data, cv_label):
+    myCViterator = []
+    for i in range(cv_label):
+        trainIndices = data[ data[cv_label] !=i ].index.values.astype(int)
+        testIndices =  data[ data[cv_label]== i ].index.values.astype(int)
+        myCViterator.append( (trainIndices, testIndices) )
 
 
-"""myCViterator = []
-for i in range()):
-    trainIndices = myDf[ myDf['cvLabel']!=i ].index.values.astype(int)
-    testIndices =  myDf[ myDf['cvLabel']==i ].index.values.astype(int)
-    myCViterator.append( (trainIndices, testIndices) )"""
-X_indices = X.index
 
 
 # split the data with 25% in each set to use holdout
-X_train, X_test, y_train, y_test, X_train_indices, X_test_indices = train_test_split(X, y, X_indices, train_size=0.35, random_state= 42,  shuffle=True)
-
-#creating a custom_cv
-custom_cv =[(X_train_indices,X_test_indices)]
+X_train, X_test, y_train, y_test = train_test_split(X, y,  train_size=0.40, random_state= 42,  shuffle=True)
 
 #Setting knn model
-knn_one = KNeighborsClassifier()
+knn_one = KNeighborsClassifier(algorithm = 'auto', 
+                            metric = 'minkowski', 
+                            n_neighbors = 13,
+                            p = 2,
+                            weights = 'distance')
 # usin g knn alone
 knn_one.fit(X_train, y_train)
 #y_test_pred = knn.fit(X_test, y_test).predict(X_test)
@@ -154,18 +157,19 @@ y_pred = knn_one.predict(X_test)
 
 print("Predictions from the classifier using holdout method:")
 
-
+print(X.shape, y.shape)
 print(accuracy_score(y_test, y_pred))
 
 
 
-##Using gridsearch
+##Using gridsearch with holdout
 #Set grid_params to find best params
+knn_two = KNeighborsClassifier()
 param_grid = [{'weights': ["uniform", "distance"], 'p': [1, 2], 
-               'n_neighbors': [2, 3, 4, 5]}]
+               'n_neighbors': [10, 20, 30, 40, 50]}]
 
 #set grid_search to find best_params
-grid_search = GridSearchCV(knn_one, param_grid,  cv=custom_cv, verbose=3)
+grid_search = GridSearchCV(knn_two, param_grid, cv=2, verbose=3)
 
 # usin g knn alone
 grid_search.fit(X_train, y_train)
@@ -173,72 +177,69 @@ print(grid_search.best_params_)
 print(grid_search.best_score_)
 #y_test_pred = knn.fit(X_test, y_test).predict(X_test)
 
-y_pred = knn_one.predict(X_test)
+y_pred = grid_search.predict(X_test)
 
-print("Predictions from the classifier using holdout method:")
+print("Predictions from the classifier using holdout with Gridsearch method:")
+
+# split the data with 25% in each set to use two fold cross  validation
+X_train, X_test, y_train, y_test = train_test_split(X, y,  train_size=0.35, random_state= 42,  shuffle=True)
+
+knn_three = KNeighborsClassifier(algorithm = 'auto', 
+                            metric = 'minkowski', 
+                            n_neighbors = 13,
+                            p = 2,
+                            weights = 'distance')
+
+y_train_pred = knn_three.fit(X_train, y_train).predict(X_train)
+y_test_pred = knn_three.fit(X_test, y_test).predict(X_test)
+#plot_confucion_matrix(y_test, y_test_pred)
+
+#using two-fold cross_validation
+print(X.shape, y.shape)
+
+print(y_train_pred.shape)
+print(y_test_pred.shape)
+
+#accuracy_score(stDt.label,ret1)
+
+print(accuracy_score(y_train, y_train_pred), accuracy_score(y_test, y_test_pred))
+
+print()
+knn_four = KNeighborsClassifier()
+#using crossvalidation with leaveOneOut
+print('using crossvalidation with leaveOneOut\n')
+X_train, X_test, y_train, y_test = train_test_split(X, y,  train_size=0.35, random_state= 42,  shuffle=True)
 
 
-print(accuracy_score(y_test, y_pred))
-
-
-
-"""
-knn_two = KN
-#Setting grid_search to find best parameters, with cross_validation of 5
-grid_search = GridSearchCV(knn, param_grid,  cv=5, verbose=3)
-
-
-grid_search.fit(X, y)
-#grid_search.fit(X_test, y_test).predict(X_test)
-#plot_graph(X_train, X_test, y_train, y_test)
+grid_search = GridSearchCV(knn_four, param_grid, cv=LeaveOneOut(), verbose=3)
+#grid_search = GridSearchCV(knn_four, param_grid, cv=5, verbose=3)
+grid_search.fit(X_train, y_train)
+y_pred = grid_search.predict(X_test)
 print(grid_search.best_params_)
 print(grid_search.best_score_)
 
 
 
-
-y_train_pred = knn.fit(X_train, y_train).predict(X_train)
-y_test_pred = knn.fit(X_test, y_test).predict(X_test)
-plot_confucion_matrix(y_test, y_test_pred)
-#print(y_train_pred)
-#print(y_test_pred)
-
-#using two-fold cross_validation
-print(accuracy_score(y_train, y_train_pred), accuracy_score(y_test, y_test_pred))
-
-print()
-print('using crossvalidation with leaveOneOut\n')
-scores = cross_val_score(knn, X, y, cv=LeaveOneOut())
-print(scores)
-grid_search = GridSearchCV(knn, param_grid, cv=LeaveOneOut(),verbose=3)
-grid_search.fit(X, y)
-#grid_search.fit(X_test, y_test).predict(X_test)
-
-print(grid_search.best_params_)
-#print(grid_search.best_score_)
-y_pred = grid_search.predict(X)
-accuracy_score(y_test, y_pred)
-#printing error for leaveOneOut cross-val
-print(scores.mean())
-
+print(accuracy_score(y_test, y_pred))
 
 
 from sklearn.preprocessing import PolynomialFeatures 
 from sklearn.linear_model import LinearRegression 
-
+from sklearn.impute import SimpleImputer
 def PolynomialRegression(degree=2, **kwargs):
     return make_pipeline(PolynomialFeatures(degree), LinearRegression(**kwargs))
 
-print(X.shape, y.shape)"""
-
-"""plt.scatter(p.reshape(1211, 1), y, color='black')
+print(X.shape, y.shape)
+print(X.isnull().sum())
+plt.scatter(X_train[:,0], y_train, color='black')
 axis = plt.axis()
+imputer = SimpleImputer(missing_values=np.nan, strategy='mean', verbose=0)
 for degre in [1, 3, 5]:
-    y_test_pred = PolynomialRegression(degree).fit(X, y).predict(X_test)
+    y_test_pred = PolynomialRegression(degree).fit(X_train, y_train).predict(X_test)
     plt.plot(X_test.ravel(), y_test, label='degree=={0}'.format(degree))
 plt.xlim(-0.1, 1.0)
 plt.ylim(-2, 12)
-plt.legend(loc='best')"""
+plt.legend(loc='best')
 
 
 
