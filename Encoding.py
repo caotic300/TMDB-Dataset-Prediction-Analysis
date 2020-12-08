@@ -56,8 +56,9 @@ test_df = df
 print(test_df.shape)
 
 test_df['genres'] = test_df['genres'].astype('category')
-test_df['genres_cat'] = test_df['genres'].cat.codes
 
+test_df['genres_cat'] = test_df['genres'].cat.codes
+print(test_df)
 countCol = test_df.groupby("genres_cat")["genres_cat"].transform(len)
 mask = (countCol >= 100)
 

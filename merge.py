@@ -115,10 +115,11 @@ test = test[~test.crew.str.len().eq(0)]
 test = test[~test.cast.str.len().eq(0)]
 """
 
-test.to_csv(r'.test.csv',
+test.to_csv(r'test.csv',
             index = False)
 
 print(test['genres'])
+
 
 
 
