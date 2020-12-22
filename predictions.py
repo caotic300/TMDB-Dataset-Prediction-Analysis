@@ -139,7 +139,6 @@ def make_custom_cross_val(data, cv_label):
 
 
 
-
 # split the data with 25% in each set to use holdout
 X_train, X_test, y_train, y_test = train_test_split(X, y,  train_size=0.40, random_state= 42,  shuffle=True)
 
@@ -218,25 +217,42 @@ y_pred = grid_search.predict(X_test)
 print(grid_search.best_params_)
 print(grid_search.best_score_)
 
-
-
 print(accuracy_score(y_test, y_pred))
 
 
 from sklearn.preprocessing import PolynomialFeatures 
 from sklearn.linear_model import LinearRegression 
 from sklearn.impute import SimpleImputer
+
+
+##Using polynomial regression
 def PolynomialRegression(degree=2, **kwargs):
     return make_pipeline(PolynomialFeatures(degree), LinearRegression(**kwargs))
 
 print(X.shape, y.shape)
 print(X.isnull().sum())
-plt.scatter(X_train[:,0], y_train, color='black')
-axis = plt.axis()
+
+X_train, X_test, y_train, y_test = train_test_split(X, y,  train_size=0.35, random_state= 42,  shuffle=True)
+
+
 imputer = SimpleImputer(missing_values=np.nan, strategy='mean', verbose=0)
-for degre in [1, 3, 5]:
+imputer = imputer.fit(X_test.iloc[:, 1:3])
+X_test.iloc[:, 1:3] = imputer.transform(X_test.iloc[:, 1:3])
+
+imputer = SimpleImputer(missing_values=np.nan, strategy='mean', verbose=0)
+imputer = imputer.fit(X_train.iloc[:, 1:3])
+
+X_train.iloc[:, 1:3] = imputer.transform(X_train.iloc[:, 1:3])
+
+imputer = SimpleImputer(missing_values=np.nan, strategy='mean', verbose=0)
+imputer = imputer.fit(X.iloc[:, 1:3])
+X.iloc[:, 1:3] = imputer.transform(X.iloc[:, 1:3])
+
+plt.scatter(X.iloc[:, 0], y, color='black') 
+axis = plt.axis()
+for degree in [1, 3, 5]:
     y_test_pred = PolynomialRegression(degree).fit(X_train, y_train).predict(X_test)
-    plt.plot(X_test.ravel(), y_test, label='degree=={0}'.format(degree))
+    plt.plot(X, y, label='degree=={0}'.format(degree))
 plt.xlim(-0.1, 1.0)
 plt.ylim(-2, 12)
 plt.legend(loc='best')
