@@ -62,11 +62,11 @@ def convert(df, columns):
             
     return df
 
-path1 = "D:\Computing\Computer Science Year 3\IN3062 Introduction to Artificial Intelligence\TMDB-home"
+path1 = "./"
 filename_read = os.path.join(path1,"tmdb_5000_movies.csv")
 movie = pd.read_csv(filename_read,na_values=['NA','?'])
 
-path2 = "D:\Computing\Computer Science Year 3\IN3062 Introduction to Artificial Intelligence\TMDB-home"
+path2 = "./"
 filename_read = os.path.join(path2,"tmdb_5000_credits.csv")
 credit = pd.read_csv(filename_read,na_values=['NA','?'])
 
@@ -124,13 +124,13 @@ enc_df = encode_list(temp, feature = 'genres')
 #enc_df = encode_list(temp, feature = 'production_companies')
 #enc_df = encode_list(temp, feature = 'cast')
 #enc_df = encode_list(temp, feature = 'crew')
-
-
+#enc_df_two = encode_list(test.copy(), feature = 'genres')
+#print(end_df)
 print(enc_df.shape)
 print(enc_df.dtypes)
 
 encoded = enc_df.copy()
-
+encoded_two = test.copy()
 from sklearn.model_selection import train_test_split
 
 # Remove irrelavant features 
@@ -139,25 +139,151 @@ encoded = encoded.drop(columns=['id', 'keywords', 'original_title',
                                  'vote_count','movie_id',
                                 'production_companies', 'cast', 'crew']) 
                                 # , 'genres', 'cast', 'crew', 'production_companies'
-
+encoded_two = encoded_two.drop(columns=['id', 'keywords', 'original_title',
+                                 'vote_count','movie_id',
+                                'production_companies', 'cast', 'crew', 'genres']) 
 
 U = encoded.drop(columns=['vote_round'])
 v = encoded['vote_round']
+
 v_flat = v.values.ravel()
 
 print(U.dtypes, U.shape)
 print(v_flat.shape)
 
-# Converting datatypes for encoded genres 
-for i in range(3, 24):
-    name = U.columns[i]
-    U[name] = np.asarray(U[name]).astype('float32')
-    
+# Converting datatypes for encoded genres
+def encode_genres(df): 
+    for i in range(3, 24):
+        name = U.columns[i]
+        U[name] = np.asarray(U[name]).astype('float32')
+
+encode_genres(U)    
 from keras.utils import to_categorical
 v_flat = to_categorical(v_flat) 
 
 X_train, X_test, y_train, y_test = train_test_split(U, v_flat, test_size=0.25, random_state=9)
 
+
+#Linear Regression
+#enc_two_df = encode_list(test, feature = 'genres')
+
+print(enc_df.shape)
+print(enc_df.dtypes)
+
+
+#encoded = enc_two_df
+
+U_two = encoded_two.drop(columns=['vote_average'])
+v_two = encoded_two['vote_average']
+v_flat_two = v_two.values.ravel()
+
+print(U_two.dtypes, U_two.shape)
+print(v_flat_two.shape)
+
+#v_flat_two = to_categorical(v_flat_two)
+def chart_regression(pred, y, sort=True):
+    t = pd.DataFrame({'pred': pred, 'y': y.flatten()})
+    if sort:
+        t.sort_values(by=['y'], inplace=True)
+    plt.plot(t['y'].tolist(), label='expected')
+    plt.plot(t['pred'].tolist(), label='prediction')
+    plt.ylabel('output')
+    plt.legend()
+    plt.show()
+    
+
+
+X_train, X_test, y_train, y_test = train_test_split(U_two, v_flat_two, test_size=0.25, random_state=9)
+from sklearn.model_selection import GridSearchCV
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import r2_score
+from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import mean_squared_error
+
+model = LinearRegression()
+params = {'fit_intercept':[True, False], 'normalize':[True, False], 'copy_X':[True, False]}
+grid_search = GridSearchCV(model, param_grid=params, verbose=2, scoring='neg_mean_squared_error')
+grid_search.fit(X_train, y_train)
+
+best_params = grid_search.best_params_
+best_score = grid_search.best_score_
+print(best_params)
+print(best_score)
+
+y_pred = grid_search.predict(X_test)
+
+mae = mean_absolute_error(y_test, y_pred)
+mse = mean_squared_error(y_test, y_pred)
+rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+r2_square =r2_score(y_test, y_pred)
+
+chart_regression(y_pred[:100].flatten(), y_test[:100].flatten(), sort=True)    
+print('MAE:', mae)
+print('MSE:', mse)
+print('RMSE:', rmse)
+print('R2 Square', r2_square)
+
+print(y_pred.shape)
+print(y_test.shape)
+
+## Ridge Regression
+from sklearn.linear_model import Ridge
+from sklearn.linear_model import Lasso
+from sklearn.linear_model import ElasticNet
+
+model_Ridge = Ridge()
+#prepare a range of alpha values to test
+alphas = np.array([1, 0.1, 0.01, 0.001, 0.0001, 0])
+normalizes = ([True, False])
+
+grid_search_Ridge = GridSearchCV(estimator=model_Ridge,  
+                         param_grid=(dict(alpha=alphas, normalize= normalizes)),
+                         scoring='neg_mean_squared_error',
+                         n_jobs=-1)
+
+
+grid_search_Ridge.fit(X_train, y_train)
+print(grid_search_Ridge.best_params_)
+print(grid_search_Ridge.best_score_)
+
+y_pred = grid_search_Ridge.predict(X_test)
+mae = mean_absolute_error(y_test, y_pred)
+mse = mean_squared_error(y_test, y_pred)
+rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+r2_square =r2_score(y_test, y_pred)
+
+print('MAE:', mae)
+print('MSE:', mse)
+print('RMSE:', rmse)
+print('R2 Square', r2_square)
+
+print(y_pred.shape)
+print(y_test.shape)
+
+chart_regression(y_pred[:100].flatten(), y_test[:100].flatten(), sort=True)
+
+
+##ElasticNet Regression
+model_Elastic = ElasticNet()
+alphas = np.array([1,0.1,0.01,0.001,0.0001,0])
+normalizes= ([True,False])
+
+    ## Building Grid Search algorithm with cross-validation and Mean Squared Error score.
+
+grid_search_elastic = GridSearchCV(estimator=model_Elastic,  
+                         param_grid=(dict(alpha=alphas, normalize= normalizes)),
+                         scoring='neg_mean_squared_error',
+                         n_jobs=-1)
+grid_search_elastic.fit(X_train, y_train)
+
+print(grid_search_elastic.best_params_)
+print(grid_search_elastic.best_score_)
+
+y_pred = grid_search_elastic.predict(X_test)
+
+chart_regression(y_pred[:100].flatten(), y_test[:100].flatten(), sort=True)
+
+#Neural Network
 from sklearn import metrics
 from keras.models import Sequential
 from keras.layers.core import Dense, Activation
@@ -229,7 +355,7 @@ enc_df.to_csv(r'D:\Computing\Computer Science Year 3\IN3062 Introduction to Arti
             index = False)
 
 print(test.dtypes)
-print(test['genres_cat'])
+#print(test['genres_cat'])
 
 print(temp.shape)
 
@@ -266,7 +392,10 @@ X_train, X_test, y_train, y_test = train_test_split(U, v_flat, test_size=0.25, r
 # Predicting Contiunous Data 
 
 # Linear Regression 
+
+#print(reg.intercept_)
 # Regression Trees
+
 # Neural Network 
 # Use binning to put rating in categories
 
